@@ -2,13 +2,7 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 )
-
-func main() {
-
-	fmt.Println("jdbc")
-}
 
 func GetScan(rows *sql.Rows) (map[string]interface{}, error) {
 	defer rows.Close()
