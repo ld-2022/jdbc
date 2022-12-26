@@ -1,4 +1,4 @@
-package main
+package jdbc
 
 import (
 	"github.com/jmoiron/sqlx"

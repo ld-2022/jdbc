@@ -1,4 +1,4 @@
-package main
+package jdbc
 
 type UpdateOption func(*UpdateOptions)
 type UpdateOptions struct {

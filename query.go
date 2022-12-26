@@ -1,4 +1,4 @@
-package main
+package jdbc
 
 type QueryOption func(*QueryOptions)
 type QueryOptions struct {
