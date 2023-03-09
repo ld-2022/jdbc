@@ -30,7 +30,9 @@ func GetScan(rows *sql.Rows) (map[string]interface{}, error) {
 		val := *(values[i].(*interface{}))
 		switch column.DatabaseTypeName() {
 		case "VARCHAR":
-			val = string(val.([]byte))
+			if val != nil {
+				val = string(val.([]byte))
+			}
 		}
 		result[column.Name()] = val
 	}
