@@ -2,8 +2,34 @@ package jdbc
 
 import (
 	"database/sql"
-	"reflect"
+	"encoding/binary"
+	"fmt"
+	"math"
 )
+
+func parseAsBytes(val interface{}) ([]byte, bool) {
+	b, ok := val.([]byte)
+	return b, ok
+}
+
+// Parse as Int
+func parseInt(val interface{}) (int64, error) {
+	bytes, ok := parseAsBytes(val)
+	if !ok {
+		return 0, fmt.Errorf("can't be parsed as int, type is %T", val)
+	}
+	return int64(binary.BigEndian.Uint64(bytes)), nil
+}
+
+// Parse as Float
+func parseFloat(val interface{}) (float64, error) {
+	bytes, ok := parseAsBytes(val)
+	if !ok {
+		return 0, fmt.Errorf("can't be parsed as float, type is %T", val)
+	}
+	bits := binary.BigEndian.Uint64(bytes)
+	return math.Float64frombits(bits), nil
+}
 
 func GetScan(rows *sql.Rows) (map[string]interface{}, error) {
 	defer rows.Close()
@@ -80,11 +106,19 @@ func GetScanMap(rows *sql.Rows) (map[string]interface{}, error) {
 		case "INT", "TINYINT", "SMALLINT", "MEDIUMINT", "BIGINT",
 			"BIT", "BOOL":
 			if val != nil {
-				val = reflect.ValueOf(val).Int()
+				intVal, err := parseInt(val)
+				if err != nil {
+					// Handle the error
+				}
+				val = intVal
 			}
 		case "FLOAT", "DOUBLE", "DECIMAL":
 			if val != nil {
-				val = reflect.ValueOf(val).Float()
+				floatVal, err := parseFloat(val)
+				if err != nil {
+					// Handle the error
+				}
+				val = floatVal
 			}
 		case "DATE", "DATETIME", "TIMESTAMP", "YEAR", "TIME":
 			if val != nil {
@@ -136,11 +170,19 @@ func GetScanMapList(rows *sql.Rows) ([]map[string]interface{}, error) {
 			case "INT", "TINYINT", "SMALLINT", "MEDIUMINT", "BIGINT",
 				"BIT", "BOOL":
 				if val != nil {
-					val = reflect.ValueOf(val).Int()
+					intVal, err := parseInt(val)
+					if err != nil {
+						// Handle the error
+					}
+					val = intVal
 				}
 			case "FLOAT", "DOUBLE", "DECIMAL":
 				if val != nil {
-					val = reflect.ValueOf(val).Float()
+					floatVal, err := parseFloat(val)
+					if err != nil {
+						// Handle the error
+					}
+					val = floatVal
 				}
 			case "DATE", "DATETIME", "TIMESTAMP", "YEAR", "TIME":
 				if val != nil {
