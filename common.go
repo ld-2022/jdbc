@@ -105,21 +105,21 @@ func GetScanMap(rows *sql.Rows) (map[string]interface{}, error) {
 			}
 		case "INT", "TINYINT", "SMALLINT", "MEDIUMINT", "BIGINT",
 			"BIT", "BOOL":
-			if val != nil {
-				intVal, err := parseInt(val)
-				if err != nil {
-					// Handle the error
-				}
-				val = intVal
-			}
+			//if val != nil {
+			//	intVal, err := parseInt(val)
+			//	if err != nil {
+			//		// Handle the error
+			//	}
+			//	val = intVal
+			//}
 		case "FLOAT", "DOUBLE", "DECIMAL":
-			if val != nil {
-				floatVal, err := parseFloat(val)
-				if err != nil {
-					// Handle the error
-				}
-				val = floatVal
-			}
+			//if val != nil {
+			//	floatVal, err := parseFloat(val)
+			//	if err != nil {
+			//		// Handle the error
+			//	}
+			//	val = floatVal
+			//}
 		case "DATE", "DATETIME", "TIMESTAMP", "YEAR", "TIME":
 			if val != nil {
 				val = string(val.([]byte))
