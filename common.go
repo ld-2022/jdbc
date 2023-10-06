@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
+	"time"
 )
 
 func parseAsBytes(val interface{}) ([]byte, bool) {
@@ -122,7 +123,12 @@ func GetScanMap(rows *sql.Rows) (map[string]interface{}, error) {
 			//}
 		case "DATE", "DATETIME", "TIMESTAMP", "YEAR", "TIME":
 			if val != nil {
-				val = string(val.([]byte))
+				switch val.(type) {
+				case time.Time:
+					val = val.(time.Time).Format("2006-01-02 15:04:05")
+				default:
+					val = string(val.([]byte))
+				}
 			}
 		case "BINARY", "VARBINARY", "BLOB", "TINYBLOB", "MEDIUMBLOB", "LONGBLOB":
 			if val != nil {
@@ -186,7 +192,12 @@ func GetScanMapList(rows *sql.Rows) ([]map[string]interface{}, error) {
 				}*/
 			case "DATE", "DATETIME", "TIMESTAMP", "YEAR", "TIME":
 				if val != nil {
-					val = string(val.([]byte))
+					switch val.(type) {
+					case time.Time:
+						val = val.(time.Time).Format("2006-01-02 15:04:05")
+					default:
+						val = string(val.([]byte))
+					}
 				}
 			case "BINARY", "VARBINARY", "BLOB", "TINYBLOB", "MEDIUMBLOB", "LONGBLOB":
 				if val != nil {
