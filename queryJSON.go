@@ -15,5 +15,9 @@ func QueryForJSONArray(query string, args ...any) (*jsonx.JSONArray, error) {
 	if err != nil {
 		return nil, err
 	}
-	return jsonx.ParseArray(jsonx.ToJSONBytes(forMapList)), nil
+	var interfaceList []interface{}
+	for _, forMap := range forMapList {
+		interfaceList = append(interfaceList, jsonx.NewJSONObjectMap(forMap))
+	}
+	return jsonx.NewJSONArrayFromList(interfaceList), nil
 }

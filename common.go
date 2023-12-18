@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
+	"strconv"
 	"time"
 )
 
@@ -75,76 +76,78 @@ func GetScan(rows *sql.Rows) (map[string]interface{}, error) {
 
 func GetScanMap(rows *sql.Rows) (map[string]interface{}, error) {
 	defer rows.Close()
-
 	columns, err := rows.ColumnTypes()
 	if err != nil {
 		return nil, err
 	}
-
 	numColumns := len(columns)
-
 	if !rows.Next() {
 		return nil, sql.ErrNoRows
 	}
-
 	values := make([]interface{}, numColumns)
 	for i := range values {
 		values[i] = new(interface{})
 	}
-
 	if err := rows.Scan(values...); err != nil {
 		return nil, err
 	}
-
 	result := make(map[string]interface{}, numColumns)
 	for i, column := range columns {
 		val := *(values[i].(*interface{}))
-		switch column.DatabaseTypeName() {
-		case "VARCHAR", "CHAR", "TEXT", "TINYTEXT", "MEDIUMTEXT", "LONGTEXT", "ENUM", "SET":
-			if val != nil {
-				val = string(val.([]byte))
-			}
-		case "INT", "TINYINT", "SMALLINT", "MEDIUMINT", "BIGINT",
-			"BIT", "BOOL":
-			//if val != nil {
-			//	intVal, err := parseInt(val)
-			//	if err != nil {
-			//		// Handle the error
-			//	}
-			//	val = intVal
-			//}
-		case "FLOAT", "DOUBLE", "DECIMAL":
-			//if val != nil {
-			//	floatVal, err := parseFloat(val)
-			//	if err != nil {
-			//		// Handle the error
-			//	}
-			//	val = floatVal
-			//}
-		case "DATE", "DATETIME", "TIMESTAMP", "YEAR", "TIME":
-			if val != nil {
-				switch val.(type) {
-				case time.Time:
-					val = val.(time.Time).Format("2006-01-02 15:04:05")
-				default:
-					val = string(val.([]byte))
-				}
-			}
-		case "BINARY", "VARBINARY", "BLOB", "TINYBLOB", "MEDIUMBLOB", "LONGBLOB":
-			if val != nil {
-				val = val.([]byte)
-			}
-		default:
-			// No action for other types
+		if val != nil {
+			val = toVal(column, val)
 		}
 		result[column.Name()] = val
 	}
-
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 	return result, nil
 }
+
+func toVal(column *sql.ColumnType, val interface{}) interface{} {
+	switch column.DatabaseTypeName() {
+	case "VARCHAR", "CHAR", "TEXT", "TINYTEXT", "MEDIUMTEXT", "LONGTEXT", "ENUM", "SET":
+		if v, ok := val.([]byte); ok {
+			val = string(v)
+		}
+	case "INT", "TINYINT", "SMALLINT", "MEDIUMINT", "BIGINT", "BIT", "BOOL":
+		if v, ok := val.([]byte); ok {
+			if v, err := toUint64(v); err == nil {
+				val = v
+			}
+		}
+	case "FLOAT", "DOUBLE", "DECIMAL":
+		if v, ok := val.([]uint8); ok {
+			if v, err := toFloat64(v); err == nil {
+				val = v
+			}
+		}
+	case "DATE", "DATETIME", "TIMESTAMP", "YEAR", "TIME":
+		switch v := val.(type) {
+		case time.Time:
+			val = v.Format("2006-01-02 15:04:05")
+		case []byte:
+			val = string(v)
+		}
+	case "BINARY", "VARBINARY", "BLOB", "TINYBLOB", "MEDIUMBLOB", "LONGBLOB":
+		if v, ok := val.([]byte); ok {
+			val = v
+		}
+	}
+	return val
+}
+
+func toUint64(val []byte) (int64, error) {
+	valStr := string(val)
+	return strconv.ParseInt(valStr, 10, 64)
+}
+
+func toFloat64(val []uint8) (float64, error) {
+	valStr := string(val)
+	return strconv.ParseFloat(valStr, 64)
+}
+
 func GetScanMapList(rows *sql.Rows) ([]map[string]interface{}, error) {
 	defer rows.Close()
 
@@ -168,43 +171,8 @@ func GetScanMapList(rows *sql.Rows) ([]map[string]interface{}, error) {
 		result := make(map[string]interface{}, numColumns)
 		for i, column := range columns {
 			val := *(values[i].(*interface{}))
-			switch column.DatabaseTypeName() {
-			case "VARCHAR", "CHAR", "TEXT", "TINYTEXT", "MEDIUMTEXT", "LONGTEXT", "ENUM", "SET":
-				if val != nil {
-					val = string(val.([]byte))
-				}
-			case "INT", "TINYINT", "SMALLINT", "MEDIUMINT", "BIGINT",
-				"BIT", "BOOL":
-				//if val != nil {
-				//	intVal, err := parseInt(val)
-				//	if err != nil {
-				//		// Handle the error
-				//	}
-				//	val = intVal
-				//}
-			case "FLOAT", "DOUBLE", "DECIMAL":
-				/*if val != nil {
-					floatVal, err := parseFloat(val)
-					if err != nil {
-						// Handle the error
-					}
-					val = floatVal
-				}*/
-			case "DATE", "DATETIME", "TIMESTAMP", "YEAR", "TIME":
-				if val != nil {
-					switch val.(type) {
-					case time.Time:
-						val = val.(time.Time).Format("2006-01-02 15:04:05")
-					default:
-						val = string(val.([]byte))
-					}
-				}
-			case "BINARY", "VARBINARY", "BLOB", "TINYBLOB", "MEDIUMBLOB", "LONGBLOB":
-				if val != nil {
-					val = val.([]byte)
-				}
-			default:
-				// No action for other types
+			if val != nil {
+				val = toVal(column, val)
 			}
 			result[column.Name()] = val
 		}
